@@ -1,0 +1,95 @@
+name: CI-CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: self-hosted
+
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL || 'it.mohitsaini@gmail.com' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Convert Docker username to lowercase (Windows-safe)
+      - name: Prepare Docker username
+        shell: powershell
+        run: |
+          $lower = "${{ env.DOCKER_USERNAME }}".ToLower()
+          echo "DOCKER_USER_LOWER=$lower" >> $env:GITHUB_ENV
+
+      # Build & Push Backend Image
+      - name: Build and Push Backend Image
+        shell: powershell
+        run: |
+          docker build -t $env:DOCKER_USER_LOWER/devops-backend:latest ./backend
+          docker push $env:DOCKER_USER_LOWER/devops-backend:latest
+
+      # Build & Push Frontend Image
+      - name: Build and Push Frontend Image
+        shell: powershell
+        run: |
+          docker build -t $env:DOCKER_USER_LOWER/devops-frontend:latest ./frontend
+          docker push $env:DOCKER_USER_LOWER/devops-frontend:latest
+
+      # Email on SUCCESS
+      - name: Send Email on Success
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "CI/CD Pipeline Success"
+          to: ${{ env.NOTIFY_EMAIL }}
+          from: GitHub Actions <${{ secrets.SMTP_USERNAME }}>
+          body: |
+            Hello,
+
+            The CI/CD pipeline completed successfully.
+
+            Repository : ${{ github.repository }}
+            Branch     : ${{ github.ref_name }}
+            Commit SHA : ${{ github.sha }}
+            Workflow   : ${{ github.workflow }}
+            Run ID     : ${{ github.run_id }}
+
+            Docker images were built and pushed successfully.
+
+            Regards,
+            GitHub Actions
+
+      # Email on FAILURE (GUARANTEED)
+      - name: Send Email on Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "CI/CD Pipeline Failed"
+          to: ${{ env.NOTIFY_EMAIL }}
+          from: GitHub Actions <${{ secrets.SMTP_USERNAME }}>
+          body: |
+            Hello,
+
+            The CI/CD pipeline has failed.
+
+            Repository : ${{ github.repository }}
+            Branch     : ${{ github.ref_name }}
+            Commit SHA : ${{ github.sha }}
+            Workflow   : ${{ github.workflow }}
+            Run ID     : ${{ github.run_id }}
+
+            Please review the GitHub Actions logs for details.
+
+            Regards,
+            GitHub Actions
