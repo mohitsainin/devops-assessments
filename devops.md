@@ -8,7 +8,7 @@
 
 | **Date** | **Version** | **Description** | **Reading Time** | **Author** |
 |---------|-------------|-----------------|------------------|------------|
-| **JAN '26'** | v1.0 | Initial DevOps Setup & Documentation | ~8–10 minutes | Mohit Saini |
+| **JAN 26** | v1.0 | Initial DevOps Setup & Documentation | 8–10 minutes | Mohit Saini |
 
 
 ## Table of Content
@@ -45,7 +45,9 @@ The application follows a **Docker Compose based architecture**:
 
 <img width="705" height="472" alt="image" src="https://github.com/user-attachments/assets/a36ae2a1-02f6-4f25-8474-e10c7b1ed0b7" />
 
-Frontend → Backend communication 
+The frontend communicates with the backend using Docker internal DNS.
+Instead of using `localhost`, the frontend resolves the backend service
+by its Docker Compose service name over the internal bridge network.
 
 ## Directory Structure
 
@@ -53,7 +55,7 @@ Frontend → Backend communication
 
 
 ```
-devops-assessments-/
+devops-assessments/
 ├── backend/
 │ ├── Dockerfile
 │ ├── .dockerignore
@@ -92,7 +94,7 @@ git --version
 ## Clone the Repository
 ```
 git clone <repository-url>
-cd devops-assessments-
+cd devops-assessments
 ```
 
 ## Build and Run Containers
